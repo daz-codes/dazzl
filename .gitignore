@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Dazzl compiler output
+.dazzl_modules/
+
+# npm
+npm-debug.log*
+package-lock.json
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test output
+*.log

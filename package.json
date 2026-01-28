@@ -1,0 +1,19 @@
+{
+  "name": "dazzl",
+  "version": "0.1.0",
+  "main": "src/compiler.js",
+  "bin": {
+    "dazzl": "./src/cli.js"
+  },
+  "scripts": {
+    "build": "node src/cli.js examples/test.daz",
+    "test": "node src/cli.js examples/test.daz && node examples/test.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "The Dazzl compiler - compiles .daz files to JavaScript",
+  "dependencies": {
+    "peggy": "^5.0.6"
+  }
+}

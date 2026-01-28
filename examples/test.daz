@@ -1,0 +1,75 @@
+# Basic Dazzl test file
+
+greeting = "Hello from Dazzl!"
+x = 10
+y = 20
+
+add a, b = a + b
+
+result = add(x, y)
+
+console.log(greeting)
+console.log(result)
+
+if result == 30 {
+  console.log("Math works!")
+} else {
+  console.log("Something is wrong")
+}
+
+unless result == 0 {
+  console.log("Result is not zero")
+}
+
+// Postfix conditionals
+console.log("Postfix if works!") if result == 30
+console.log("This should not print") unless result == 30
+
+// Conditional expressions (if-else as expression)
+// Without "then" keyword
+level = if result > 50 "high" else "low"
+console.log(level)
+if result == 30 console.log("single-line if works") else console.log("nope")
+
+// With "then" keyword
+sign = if result > 0 then "positive" else "non-positive"
+console.log(sign)
+
+// Nested conditional expressions
+nested = if result > 100 "big" else if result > 10 "medium" else "small"
+console.log(nested)
+
+// Inline conditional expression
+console.log(if true then "inline ternary works" else "nope")
+
+// Symbols
+status = :active
+console.log(status)
+
+// Four function styles
+squared(x) = x * x
+multiply: x, y -> x * y
+triple: (x) -> x * 3
+double x = x + x
+
+squared(6) |> console.log
+multiply(3, 4) |> console.log
+triple(5) |> console.log
+double(7) |> console.log
+
+// Range literal
+my_range = [1..5]
+Range.to_list(my_range) |> console.log
+Range.size(my_range) |> console.log
+Range.member(my_range, 3) |> console.log
+
+// Pipe operator
+result |> add(5) |> console.log
+
+// Kernel functions
+console.log(is_integer(42))
+console.log(is_sym(:test))
+console.log(is_range(my_range))
+console.log(length("hello"))
+console.log(abs(0 - 5))
+console.log(inspect(:active))
