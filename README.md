@@ -128,6 +128,10 @@ x // y       # integer division (Math.floor)
 x % y        # modulo
 x ** y       # exponentiation (right-associative)
 
+# Concatenation
+"a" ++ "b"   # "ab" (strings)
+[1] ++ [2]   # [1, 2] (arrays)
+
 # Unary
 -x           # negation
 +x           # unary plus
@@ -176,6 +180,58 @@ clamp: (val, min, max) -> {
   if val > max { return max }
   val   # implicit return
 }
+```
+
+### Calling Functions
+
+Functions can be called with or without parentheses:
+
+```ruby
+# With parentheses (traditional)
+greet("World")
+add(1, 2)
+
+# Without parentheses
+greet "World"
+add 1, 2
+
+# Nested calls (right-associative)
+puts greet "World"    # puts(greet("World"))
+
+# Chained with pipes
+"hello" |> String.upcase |> console.log
+```
+
+### Pattern Matching Functions
+
+Define multiple clauses for the same function with different patterns. Dazzl merges them into a single function with conditional logic:
+
+```ruby
+# Classic factorial with pattern matching
+factorial 0 = 1
+factorial n = n * factorial(n - 1)
+
+factorial(5)  # 120
+```
+
+Patterns can be literals (numbers, strings, booleans, nil), wildcards (`_`), or identifiers:
+
+```ruby
+# FizzBuzz with pattern matching
+fizzbuzz n if n % 15 == 0 = "FizzBuzz"
+fizzbuzz n if n % 3 == 0 = "Fizz"
+fizzbuzz n if n % 5 == 0 = "Buzz"
+fizzbuzz n = n
+
+# Handling special values
+describe nil = "nothing"
+describe true = "yes"
+describe false = "no"
+describe _ = "something else"
+
+describe(nil)    # "nothing"
+describe(true)   # "yes"
+describe(42)     # "something else"
 ```
 
 ### Control Flow
