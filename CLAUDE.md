@@ -35,14 +35,19 @@ The compiler pipeline is: **source -> PEG parse -> AST -> codegen -> JS output**
 | `UnlessStatement` | `test, consequent` | `if (!(...)) { }` |
 | `ConditionalExpression` | `test, consequent, alternate` | `(test ? a : b)` |
 | `ExpressionStatement` | `expression` | `expr;` |
-| `BinaryExpression` | `op, left, right` | `left op right` |
+| `BinaryExpression` | `op, left, right` | `left op right` (// → Math.floor) |
+| `UnaryExpression` | `op, operand` | `-x`, `+x` |
 | `CallExpression` | `callee, args[]` | `callee(args)` |
 | `MemberExpression` | `object, property` | `object.property` |
 | `RangeLiteral` | `start, end` | `new _Range(start, end)` |
+| `ArrayLiteral` | `elements[]` | `[a, b, c]` |
+| `ObjectLiteral` | `properties[]` | `{ key: value }` |
 | `Identifier` | `name` | `name` |
 | `NumericLiteral` | `value` | `value` |
 | `StringLiteral` | `value` | `"value"` |
+| `InterpolatedString` | `parts[]` | `` `Hello ${name}` `` |
 | `BooleanLiteral` | `value` | `true`/`false` |
+| `NilLiteral` | `value` | `null` or `undefined` |
 | `SymbolLiteral` | `name` | `Symbol("name")` |
 
 ## Adding a New Language Feature
@@ -63,10 +68,18 @@ The compiler pipeline is: **source -> PEG parse -> AST -> codegen -> JS output**
 
 **Special case: Kernel module** — The Kernel module is auto-imported when any of its functions are used (detected by identifier name in `KERNEL_FUNCTIONS` set). In Dazzl source, functions are called directly (e.g., `is_integer(x)`), but the codegen transforms these to `Kernel.is_integer(x)` to avoid polluting the JS global namespace.
 
+**Stdlib modules (Integer, String, etc.)** — These are detected by identifier usage via `STDLIB_MODULES` set in codegen.js. When you write `Integer.is_even(4)`, the compiler detects `Integer` and auto-imports the module. Some modules use `STDLIB_ALIASES` to map Dazzl names to JS names that avoid conflicts (e.g., `String` in Dazzl → `Str` in JS output to avoid shadowing the JS String global).
+
+To add a new stdlib module:
+1. Create `src/modules/<name>.js`
+2. Add to `MODULES` in codegen.js: `ModuleName: { file: "<name>", symbols: ["ExportedName"] }`
+3. Add to `STDLIB_MODULES`: `new Set([..., "ModuleName"])`
+4. If name conflicts with JS built-in, add to `STDLIB_ALIASES`: `{ ModuleName: "JsName" }`
+
 ## Key Design Decisions
 
 - **Peggy PEG grammar**: Single file defines all syntax, no separate lexer. Grammar actions produce AST nodes directly.
-- **`==` compiles to `===`**: All equality checks use strict equality in output JS.
+- **`==` compiles to `===`**: Equality checks use strict equality, except when comparing against `nil`/`null`/`undefined` which uses loose equality (`==`) so that `x == nil` catches both null and undefined.
 - **Implicit returns**: The last `ExpressionStatement` in a function body is automatically converted to a `ReturnStatement` during codegen.
 - **No semicolons required**: Newlines act as statement terminators. Semicolons are optional (accepted for multiple statements on one line).
 - **Bare assignment defaults to `const`**: `x = 5` emits `const x = 5;`. Use `let` explicitly for mutable bindings.
@@ -74,6 +87,13 @@ The compiler pipeline is: **source -> PEG parse -> AST -> codegen -> JS output**
 - **Conditional expressions**: `if condition value else other` compiles to JS ternary `(condition ? value : other)`. The `then` keyword is optional: `if x > 0 then "yes" else "no"` and `if x > 0 "yes" else "no"` are equivalent. Without `then`, the condition must be a comparison or simpler expression; with `then` or parentheses, any expression is allowed.
 - **Pipe operator desugars in grammar**: `|>` is resolved to `CallExpression` nodes during parsing, not codegen.
 - **Runtime modules are file-copied, not bundled**: The CLI copies only the needed `.js` files from `src/modules/` into `.dazzl_modules/` next to the output. This keeps compiled output simple and inspectable.
+- **Object literals support three styles**: Colon (`key: value`), hash rocket (`key => value`), and shorthand (`{ name }` when variable matches key). All compile to standard JS object literals.
+- **Array literals are standard**: `[1, 2, 3]` compiles directly to JS arrays. Range literals `[1..5]` are distinct and create Range objects.
+- **Stdlib module aliasing**: `String` in Dazzl compiles to `Str` in JS to avoid shadowing the JS String global. The `STDLIB_ALIASES` map in codegen.js handles this transformation.
+- **String interpolation**: Double-quoted strings support `#{}` interpolation (like Ruby/Elixir). These compile to JS template literals. Single-quoted strings are literal.
+- **Nil is an alias for null**: `nil`, `null`, and `undefined` are all supported. Comparisons with any of these use loose equality (`==`) so `x == nil` catches both null and undefined.
+- **Integer division**: `//` compiles to `Math.floor(a / b)`. Regular `/` is standard division.
+- **Exponentiation**: `**` is right-associative and compiles directly to JS `**`. Unary minus binds tighter: `-2 ** 2` = `4`.
 
 ## Style Notes
 

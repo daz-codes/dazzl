@@ -135,8 +135,19 @@ Additive
     { return buildBinaryExpr(head, tail); }
 
 Multiplicative
-  = head:CallExpression tail:(_ ("*" / "/") _ CallExpression)*
+  = head:Exponentiation tail:(_ ("//" / "*" / "/" / "%") _ Exponentiation)*
     { return buildBinaryExpr(head, tail); }
+
+Exponentiation
+  = base:Unary _ "**" _ exp:Exponentiation {
+      return { type: "BinaryExpression", op: "**", left: base, right: exp };
+    }
+  / Unary
+
+Unary
+  = "-" _ operand:Unary { return { type: "UnaryExpression", op: "-", operand }; }
+  / "+" _ operand:Unary { return { type: "UnaryExpression", op: "+", operand }; }
+  / CallExpression
 
 CallExpression
   = callee:MemberExpression args:(_ "(" _ ArgList? _ ")")* {
@@ -159,16 +170,46 @@ MemberExpression
 
 Primary
   = RangeLiteral
+  / ArrayLiteral
+  / ObjectLiteral
   / NumericLiteral
   / StringLiteral
   / BooleanLiteral
+  / NilLiteral
   / SymbolLiteral
   / Identifier
   / "(" _ expr:Expression _ ")" { return expr; }
 
+ObjectLiteral
+  = "{" _ "}" { return { type: "ObjectLiteral", properties: [] }; }
+  / "{" _n properties:PropertyList _n "}" { return { type: "ObjectLiteral", properties }; }
+
+PropertyList
+  = head:Property tail:(_ "," _n Property)* {
+      return [head, ...tail.map(t => t[3])];
+    }
+
+Property
+  = key:PropertyKey _ ":" _ value:Expression { return { key, value, shorthand: false }; }
+  / key:PropertyKey _ "=>" _ value:Expression { return { key, value, shorthand: false }; }
+  / id:Identifier { return { key: id.name, value: id, shorthand: true }; }
+
+PropertyKey
+  = name:$([a-zA-Z_] [a-zA-Z0-9_]*) _ { return name; }
+  / str:StringLiteral { return str.value; }
+
 RangeLiteral
   = "[" _ start:Expression _ ".." _ end:Expression _ "]" {
       return { type: "RangeLiteral", start, end };
+    }
+
+ArrayLiteral
+  = "[" _ "]" { return { type: "ArrayLiteral", elements: [] }; }
+  / "[" _ elements:ElementList _ "]" { return { type: "ArrayLiteral", elements }; }
+
+ElementList
+  = head:Expression tail:(_ "," _ Expression)* {
+      return [head, ...tail.map(t => t[3])];
     }
 
 NumericLiteral
@@ -177,8 +218,31 @@ NumericLiteral
     }
 
 StringLiteral
-  = '"' chars:$[^"]* '"' _ { return { type: "StringLiteral", value: chars }; }
+  = '"' parts:DoubleStringPart* '"' _ {
+      const hasInterpolation = parts.some(p => p.type === "interpolation");
+      if (!hasInterpolation) {
+        return { type: "StringLiteral", value: parts.map(p => p.value).join('') };
+      }
+      return { type: "InterpolatedString", parts };
+    }
   / "'" chars:$[^']* "'" _ { return { type: "StringLiteral", value: chars }; }
+
+DoubleStringPart
+  = '#{' _ expr:Expression _ '}' { return { type: "interpolation", expr }; }
+  / chars:DoubleStringChars { return { type: "literal", value: chars }; }
+
+DoubleStringChars
+  = chars:DoubleStringChar+ { return chars.join(''); }
+
+DoubleStringChar
+  = [^"#\n]
+  / '#' !'{' { return '#'; }
+  / '\\n' { return '\n'; }
+  / '\\t' { return '\t'; }
+  / '\\#' { return '#'; }
+  / '\\"' { return '"'; }
+  / '\\\\' { return '\\'; }
+  / '\n' { return '\n'; }
 
 SymbolLiteral
   = ":" name:$([a-zA-Z_] [a-zA-Z0-9_]*) _ {
@@ -189,13 +253,17 @@ BooleanLiteral
   = "true" !IdentChar _ { return { type: "BooleanLiteral", value: true }; }
   / "false" !IdentChar _ { return { type: "BooleanLiteral", value: false }; }
 
+NilLiteral
+  = ("nil" / "null") !IdentChar _ { return { type: "NilLiteral", value: "null" }; }
+  / "undefined" !IdentChar _ { return { type: "NilLiteral", value: "undefined" }; }
+
 Identifier
   = !Reserved name:$([a-zA-Z_] [a-zA-Z0-9_]*) _ {
       return { type: "Identifier", name };
     }
 
 Reserved
-  = ("let" / "const" / "function" / "return" / "if" / "else" / "unless" / "then" / "true" / "false") !IdentChar
+  = ("let" / "const" / "function" / "return" / "if" / "else" / "unless" / "then" / "true" / "false" / "nil" / "null" / "undefined") !IdentChar
 
 IdentChar
   = [a-zA-Z0-9_]

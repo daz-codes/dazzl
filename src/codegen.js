@@ -1,7 +1,18 @@
-// Registry of runtime modules: AST node type -> { file, symbols }
+// Registry of runtime modules: key -> { file, symbols }
+// Keys can be AST node types (RangeLiteral) or module names (Integer)
 const MODULES = {
   RangeLiteral: { file: "range", symbols: ["_Range", "Range"] },
   Kernel: { file: "kernel", symbols: ["Kernel"] },
+  Integer: { file: "integer", symbols: ["Integer"] },
+  String: { file: "str", symbols: ["Str"] },
+};
+
+// Standard library modules detected by identifier usage
+const STDLIB_MODULES = new Set(["Integer", "String"]);
+
+// Dazzl name -> JS name (for avoiding JS built-in collisions)
+const STDLIB_ALIASES = {
+  String: "Str",
 };
 
 // Kernel functions that trigger auto-import and get transformed to Kernel.fn()
@@ -19,6 +30,10 @@ function collectUsedModules(node, used = new Set()) {
   // Check for Kernel function usage
   if (node.type === "Identifier" && KERNEL_FUNCTIONS.has(node.name)) {
     used.add("Kernel");
+  }
+  // Check for stdlib module usage (e.g., Integer.is_even)
+  if (node.type === "Identifier" && STDLIB_MODULES.has(node.name)) {
+    used.add(node.name);
   }
   for (const v of Object.values(node)) {
     if (Array.isArray(v)) v.forEach((n) => collectUsedModules(n, used));
@@ -90,8 +105,30 @@ function generate(node, indent = 0) {
       return `(${generate(node.test)} ? ${generate(node.consequent)} : ${generate(node.alternate)})`;
 
     case "BinaryExpression": {
-      const op = node.op === "==" ? "===" : node.op === "!=" ? "!==" : node.op;
-      return `${generate(node.left)} ${op} ${generate(node.right)}`;
+      let left = generate(node.left);
+      const right = generate(node.right);
+      if (node.op === "//") {
+        return `Math.floor(${left} / ${right})`;
+      }
+      // JS requires parens around unary operand of **
+      if (node.op === "**" && node.left.type === "UnaryExpression") {
+        left = `(${left})`;
+      }
+      // Use loose equality for nil checks (catches both null and undefined)
+      const isNilCheck = node.left.type === "NilLiteral" || node.right.type === "NilLiteral";
+      let op = node.op;
+      if (op === "==") op = isNilCheck ? "==" : "===";
+      else if (op === "!=") op = isNilCheck ? "!=" : "!==";
+      return `${left} ${op} ${right}`;
+    }
+
+    case "UnaryExpression": {
+      const operand = generate(node.operand);
+      // Wrap in parens if operand is also unary or starts with same operator
+      if (node.operand.type === "UnaryExpression" || node.operand.type === "BinaryExpression") {
+        return `${node.op}(${operand})`;
+      }
+      return `${node.op}${operand}`;
     }
 
     case "CallExpression": {
@@ -109,20 +146,58 @@ function generate(node, indent = 0) {
     case "RangeLiteral":
       return `new _Range(${generate(node.start)}, ${generate(node.end)})`;
 
+    case "ArrayLiteral":
+      return `[${node.elements.map(e => generate(e)).join(", ")}]`;
+
+    case "ObjectLiteral": {
+      if (node.properties.length === 0) return "{}";
+      const props = node.properties.map(p => {
+        if (p.shorthand) return p.key;
+        return `${p.key}: ${generate(p.value)}`;
+      });
+      return `{ ${props.join(", ")} }`;
+    }
+
     case "Identifier":
-      return node.name;
+      return STDLIB_ALIASES[node.name] || node.name;
 
     case "NumericLiteral":
       return node.value;
 
-    case "StringLiteral":
-      return `"${node.value}"`;
+    case "StringLiteral": {
+      // Escape for JS double-quoted string
+      const escaped = node.value
+        .replace(/\\/g, '\\\\')
+        .replace(/"/g, '\\"')
+        .replace(/\n/g, '\\n')
+        .replace(/\t/g, '\\t');
+      return `"${escaped}"`;
+    }
+
+    case "InterpolatedString": {
+      // Emit JS template literal
+      const parts = node.parts.map(p => {
+        if (p.type === "literal") {
+          // Escape backticks and ${
+          return p.value
+            .replace(/\\/g, '\\\\')
+            .replace(/`/g, '\\`')
+            .replace(/\$\{/g, '\\${');
+        } else {
+          return '${' + generate(p.expr) + '}';
+        }
+      });
+      return '`' + parts.join('') + '`';
+    }
 
     case "SymbolLiteral":
-      return `Symbol("${node.name}")`;
+      return `Symbol.for("${node.name}")`;
 
     case "BooleanLiteral":
       return node.value ? "true" : "false";
+
+    case "NilLiteral":
+      return node.value;
 
     default:
       throw new Error(`Unknown AST node type: ${node.type}`);

@@ -1,75 +1,220 @@
-# Basic Dazzl test file
+# Dazzl Feature Showcase
+# This file demonstrates all language features
+
+# =============================================================================
+# Variables and Basic Types
+# =============================================================================
 
 greeting = "Hello from Dazzl!"
 x = 10
 y = 20
 
+console.log(greeting)
+
+# Nil/null/undefined
+empty = nil
+also_null = null
+not_defined = undefined
+
+# Booleans
+active = true
+disabled = false
+
+# Symbols (like Ruby/Elixir atoms)
+status = :active
+console.log(status)
+
+# =============================================================================
+# Strings
+# =============================================================================
+
+# Basic strings
+name = "World"
+single_quoted = 'no interpolation here: #{name}'
+
+# String interpolation (double quotes only)
+console.log("Hello #{name}!")
+console.log("Math: 2 + 2 = #{2 + 2}")
+console.log("Chained: #{String.upcase(name)}")
+
+# Multiline strings
+multiline = "Line 1
+Line 2
+Line 3"
+console.log(multiline)
+
+# =============================================================================
+# Numbers and Operators
+# =============================================================================
+
+# Arithmetic
+console.log(10 + 5)
+console.log(10 - 5)
+console.log(10 * 5)
+console.log(10 / 4)
+
+# Integer division and modulo
+console.log(10 // 3)       # 3 (floor division)
+console.log(17 % 5)        # 2 (modulo)
+console.log(-17 // 5)      # -4 (floors toward negative infinity)
+
+# Exponentiation (right-associative)
+console.log(2 ** 10)       # 1024
+console.log(2 ** 3 ** 2)   # 512 (= 2^9)
+
+# Unary operators
+console.log(-42)
+console.log(+42)
+console.log(-(-5))         # 5
+
+# =============================================================================
+# Arrays and Objects
+# =============================================================================
+
+# Arrays
+empty_arr = []
+numbers = [1, 2, 3, 4, 5]
+mixed = ["hello", 42, true, nil]
+console.log(numbers)
+
+# Objects - three styles
+obj1 = { name: "Alice", age: 30 }           # colon style
+obj2 = { name => "Bob", age => 25 }         # hash rocket style
+person_name = "Charlie"
+person_age = 35
+obj3 = { person_name, person_age }          # shorthand style
+obj4 = { person_name, city: "NYC", active => true }  # mixed
+console.log(obj1)
+console.log(obj4)
+
+# =============================================================================
+# Functions (four equivalent styles)
+# =============================================================================
+
+# Haskell-style
 add a, b = a + b
 
-result = add(x, y)
+# Math-style
+squared(n) = n * n
 
-console.log(greeting)
-console.log(result)
+# Arrow-style
+multiply: a, b -> a * b
 
+# Arrow-style with parens
+triple: (n) -> n * 3
+
+console.log(add(x, y))      # 30
+console.log(squared(6))     # 36
+console.log(multiply(3, 4)) # 12
+console.log(triple(5))      # 15
+
+# Block body with implicit return
+clamp: (val, min, max) -> {
+  if val < min { return min }
+  if val > max { return max }
+  val
+}
+console.log(clamp(50, 0, 100))   # 50
+console.log(clamp(-10, 0, 100))  # 0
+
+# =============================================================================
+# Control Flow
+# =============================================================================
+
+result = 30
+
+# If/else with optional parentheses
 if result == 30 {
   console.log("Math works!")
 } else {
   console.log("Something is wrong")
 }
 
+# Unless (negated if)
 unless result == 0 {
   console.log("Result is not zero")
 }
 
-// Postfix conditionals
+# Postfix conditionals
 console.log("Postfix if works!") if result == 30
-console.log("This should not print") unless result == 30
+console.log("This won't print") unless result == 30
 
-// Conditional expressions (if-else as expression)
-// Without "then" keyword
+# Conditional expressions (like ternary)
 level = if result > 50 "high" else "low"
-console.log(level)
-if result == 30 console.log("single-line if works") else console.log("nope")
-
-// With "then" keyword
 sign = if result > 0 then "positive" else "non-positive"
-console.log(sign)
+grade = if result > 90 "A" else if result > 80 "B" else "C"
+console.log("Level: #{level}, Sign: #{sign}, Grade: #{grade}")
 
-// Nested conditional expressions
-nested = if result > 100 "big" else if result > 10 "medium" else "small"
-console.log(nested)
+# =============================================================================
+# Pipe Operator
+# =============================================================================
 
-// Inline conditional expression
-console.log(if true then "inline ternary works" else "nope")
+# Pipes pass the left side as the first argument
+result |> add(5) |> console.log    # 35
 
-// Symbols
-status = :active
-console.log(status)
+# Works great with String module
+"  HELLO  " |> String.trim |> String.downcase |> console.log  # "hello"
 
-// Four function styles
-squared(x) = x * x
-multiply: x, y -> x * y
-triple: (x) -> x * 3
-double x = x + x
+# =============================================================================
+# Nil Checking
+# =============================================================================
 
-squared(6) |> console.log
-multiply(3, 4) |> console.log
-triple(5) |> console.log
-double(7) |> console.log
+# nil == checks for both null AND undefined
+maybe_null = null
+maybe_undef = undefined
+console.log(maybe_null == nil)   # true
+console.log(maybe_undef == nil)  # true
+console.log(42 == nil)           # false
 
-// Range literal
+# =============================================================================
+# Ranges
+# =============================================================================
+
 my_range = [1..5]
-Range.to_list(my_range) |> console.log
-Range.size(my_range) |> console.log
-Range.member(my_range, 3) |> console.log
+console.log(Range.to_list(my_range))    # [1, 2, 3, 4, 5]
+console.log(Range.size(my_range))       # 5
+console.log(Range.member(my_range, 3))  # true
 
-// Pipe operator
-result |> add(5) |> console.log
+# =============================================================================
+# Kernel Functions (auto-imported)
+# =============================================================================
 
-// Kernel functions
+# Type checking
 console.log(is_integer(42))
+console.log(is_float(3.14))
+console.log(is_binary("hello"))
 console.log(is_sym(:test))
+console.log(is_list([1, 2, 3]))
 console.log(is_range(my_range))
+
+# Utilities
+console.log(abs(-5))
 console.log(length("hello"))
-console.log(abs(0 - 5))
 console.log(inspect(:active))
+
+# =============================================================================
+# String Module (Elixir-style)
+# =============================================================================
+
+console.log(String.first("elixir"))           # "e"
+console.log(String.last("elixir"))            # "r"
+console.log(String.at("elixir", 2))           # "i"
+console.log(String.at("elixir", -1))          # "r"
+console.log(String.capitalize("hELLO"))       # "Hello"
+console.log(String.reverse("dazzl"))          # "lzzad"
+console.log(String.contains("hello", "ell"))  # true
+console.log(String.pad_leading("42", 5, "0")) # "00042"
+console.log(String.duplicate("na", 4))        # "nananana"
+
+# =============================================================================
+# Integer Module (Elixir-style)
+# =============================================================================
+
+console.log(Integer.is_even(42))        # true
+console.log(Integer.is_odd(7))          # true
+console.log(Integer.digits(1234))       # [1, 2, 3, 4]
+console.log(Integer.digits(255, 16))    # [15, 15]
+console.log(Integer.undigits([1, 2, 3]))# 123
+console.log(Integer.gcd(12, 8))         # 4
+console.log(Integer.pow(2, 10))         # 1024
+console.log(Integer.to_string(255, 16)) # "ff"

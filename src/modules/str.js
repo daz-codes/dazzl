@@ -1,0 +1,26 @@
+const Str = {
+  first: s => s[0],
+  last: s => s[s.length - 1],
+  at: (s, n) => n < 0 ? s[s.length + n] : s[n],
+  capitalize: s => s[0].toUpperCase() + s.slice(1).toLowerCase(),
+  contains: (s, pattern) => Array.isArray(pattern) ? pattern.some(p => s.includes(p)) : s.includes(pattern),
+  downcase: s => s.toLowerCase(),
+  upcase: s => s.toUpperCase(),
+  duplicate: (s, n) => s.repeat(n),
+  ends_with: (s, pattern) => Array.isArray(pattern) ? pattern.some(p => s.endsWith(p)) : s.endsWith(pattern),
+  starts_with: (s, pattern) => Array.isArray(pattern) ? pattern.some(p => s.startsWith(p)) : s.startsWith(pattern),
+  length: s => s.length,
+  reverse: s => [...s].reverse().join(''),
+  slice: (s, start, len) => s.slice(start, start + len),
+  split: (s, sep = '') => s.split(sep),
+  trim: s => s.trim(),
+  trim_leading: s => s.trimStart(),
+  trim_trailing: s => s.trimEnd(),
+  pad_leading: (s, len, pad = ' ') => s.padStart(len, pad),
+  pad_trailing: (s, len, pad = ' ') => s.padEnd(len, pad),
+  replace: (s, pattern, replacement) => s.replace(pattern, replacement),
+  to_integer: s => parseInt(s, 10),
+  to_float: s => parseFloat(s),
+};
+
+module.exports = { Str };
