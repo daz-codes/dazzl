@@ -49,6 +49,11 @@ The compiler pipeline is: **source -> PEG parse -> AST -> codegen -> JS output**
 | `BooleanLiteral` | `value` | `true`/`false` |
 | `NilLiteral` | `value` | `null` or `undefined` |
 | `SymbolLiteral` | `name` | `Symbol("name")` |
+| `PatternFunctionClause` | `name, patterns[], body` | (merged into PatternFunctionGroup) |
+| `PatternFunctionGroup` | `name, clauses[]` | `function name(_arg0) { if (...) ...; }` |
+| `LiteralPattern` | `value` | (used in pattern matching conditions) |
+| `IdentifierPattern` | `name` | (binds arg to name in clause body) |
+| `WildcardPattern` | — | (matches anything, no binding) |
 
 ## Adding a New Language Feature
 
@@ -94,6 +99,10 @@ To add a new stdlib module:
 - **Nil is an alias for null**: `nil`, `null`, and `undefined` are all supported. Comparisons with any of these use loose equality (`==`) so `x == nil` catches both null and undefined.
 - **Integer division**: `//` compiles to `Math.floor(a / b)`. Regular `/` is standard division.
 - **Exponentiation**: `**` is right-associative and compiles directly to JS `**`. Unary minus binds tighter: `-2 ** 2` = `4`.
+- **Concatenation**: `++` concatenates strings or arrays: `"a" ++ "b"` → `"ab"`, `[1] ++ [2]` → `[1, 2]`. Compiles to `.concat()`. Regular `+` also works for strings (JS behavior).
+- **Pattern-matching functions**: Haskell/Elixir-style pattern matching in function definitions. `factorial 0 = 1` followed by `factorial n = n * factorial(n-1)` compiles to a single function with if-clauses. Patterns can be literals (numbers, strings, booleans, nil), wildcards (`_`), or identifiers (variable bindings). Consecutive clauses for the same function name are merged in codegen. A regular Haskell-style function following pattern clauses becomes the catch-all clause.
+- **Wildcard `_` is reserved**: The underscore by itself is a reserved word (pattern wildcard), but identifiers starting with underscore (like `_temp`) are valid.
+- **Parenthesis-free function calls**: Functions can be called without parentheses: `greet "Daz"` compiles to `greet("Daz")`. Multiple args use commas: `add 1, 2`. Nested calls are right-associative: `puts greet "Daz"` = `puts(greet("Daz"))`. Only identifier-based callees work (not literals), so `true "foo"` doesn't parse as a call. Parenthesized calls always work: `greet("Daz")`.
 
 ## Style Notes
 

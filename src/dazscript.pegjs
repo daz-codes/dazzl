@@ -42,6 +42,16 @@ FunctionDeclaration
     { return { type: "FunctionDeclaration", name: name.name, params, body }; }
   / name:Identifier _ ":" _ params:ParamList _ "->" _ expr:Expression EOS
     { return { type: "FunctionDeclaration", name: name.name, params, body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } }; }
+  // Pattern-matching style: factorial 0 = 1 (must have at least one non-identifier pattern)
+  / name:Identifier patterns:PatternList _ "=" _ body:Block _n
+    &{ return patterns.some(p => p.type !== "IdentifierPattern"); } {
+      return { type: "PatternFunctionClause", name: name.name, patterns, body };
+    }
+  / name:Identifier patterns:PatternList _ "=" _ expr:Expression EOS
+    &{ return patterns.some(p => p.type !== "IdentifierPattern"); } {
+      return { type: "PatternFunctionClause", name: name.name, patterns,
+               body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } };
+    }
   // Haskell-style: squared x = x * x
   / name:Identifier params:ParamList _ "=" _ body:Block _n
     { return { type: "FunctionDeclaration", name: name.name, params, body }; }
@@ -51,6 +61,28 @@ FunctionDeclaration
 ParamList
   = head:Identifier tail:(_ "," _ Identifier)* {
       return [head.name, ...tail.map(t => t[3].name)];
+    }
+
+// Pattern matching for function clauses
+Pattern
+  = LiteralPattern / WildcardPattern / IdentifierPattern
+
+LiteralPattern
+  = lit:(NumericLiteral / StringLiteral / BooleanLiteral / NilLiteral) {
+      return { type: "LiteralPattern", value: lit };
+    }
+
+WildcardPattern
+  = "_" !IdentChar _ { return { type: "WildcardPattern" }; }
+
+IdentifierPattern
+  = !Reserved name:$([a-zA-Z_] [a-zA-Z0-9_]*) _ {
+      return { type: "IdentifierPattern", name };
+    }
+
+PatternList
+  = head:Pattern tail:(_ "," _ Pattern)* {
+      return [head, ...tail.map(t => t[3])];
     }
 
 ReturnStatement
@@ -131,7 +163,7 @@ Comparison
     { return buildBinaryExpr(head, tail); }
 
 Additive
-  = head:Multiplicative tail:(_ ("+" / "-") _ Multiplicative)*
+  = head:Multiplicative tail:(_ ("++" / "+" / "-") _ Multiplicative)*
     { return buildBinaryExpr(head, tail); }
 
 Multiplicative
@@ -150,6 +182,41 @@ Unary
   / CallExpression
 
 CallExpression
+  = SpaceCall
+  / ParenCall
+
+// Space-separated call: greet "Daz" or puts greet "Daz"
+// Note: uses _ not __ because Identifier already consumes trailing whitespace
+// Callee must be identifier-based (not a literal) to prevent "true foo" being parsed as true(foo)
+SpaceCall
+  = callee:CallableMember _ first:SpaceArg rest:(_ "," _ SpaceArg)* !(_ "=") {
+      return { type: "CallExpression", callee, args: [first, ...rest.map(r => r[3])] };
+    }
+
+// Member expression that starts with an identifier (callable)
+CallableMember
+  = head:Identifier tail:(_ "." _ Identifier)* {
+      return tail.reduce((object, t) => ({
+        type: "MemberExpression", object, property: t[3].name
+      }), head);
+    }
+
+// Arguments in a space-separated call (can be nested space calls, paren calls, or simple values)
+SpaceArg
+  = SpaceCall
+  / ParenCallChain
+  / MemberExpression
+
+// Paren call with at least one set of parens: foo(1) or foo(1)(2)
+ParenCallChain
+  = callee:MemberExpression args:(_ "(" _ ArgList? _ ")")+ {
+      return args.reduce((expr, a) => ({
+        type: "CallExpression", callee: expr, args: a[3] || []
+      }), callee);
+    }
+
+// Standard paren call (fallback, allows zero parens = just returns callee)
+ParenCall
   = callee:MemberExpression args:(_ "(" _ ArgList? _ ")")* {
       return args.reduce((expr, a) => ({
         type: "CallExpression", callee: expr, args: a[3] || []
@@ -263,7 +330,7 @@ Identifier
     }
 
 Reserved
-  = ("let" / "const" / "function" / "return" / "if" / "else" / "unless" / "then" / "true" / "false" / "nil" / "null" / "undefined") !IdentChar
+  = ("let" / "const" / "function" / "return" / "if" / "else" / "unless" / "then" / "true" / "false" / "nil" / "null" / "undefined" / "_") !IdentChar
 
 IdentChar
   = [a-zA-Z0-9_]

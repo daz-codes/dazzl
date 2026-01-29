@@ -127,3 +127,42 @@ console.log(Integer.undigits([1, 2, 3]));
 console.log(Integer.gcd(12, 8));
 console.log(Integer.pow(2, 10));
 console.log(Integer.to_string(255, 16));
+function factorial(_arg0) {
+  if (_arg0 === 0) return 1;
+  { const n = _arg0; return n * factorial(n - 1); }
+  throw new Error("No pattern matched for factorial");
+}
+console.log(factorial(5));
+console.log(factorial(0));
+function fib(_arg0) {
+  if (_arg0 === 0) return 0;
+  if (_arg0 === 1) return 1;
+  { const n = _arg0; return fib(n - 1) + fib(n - 2); }
+  throw new Error("No pattern matched for fib");
+}
+console.log(fib(10));
+function greet(_arg0) {
+  if (_arg0 === "world") return "Hello World!";
+  { const name = _arg0; return `Hello ${name}!`; }
+  throw new Error("No pattern matched for greet");
+}
+console.log(greet("world"));
+console.log(greet("Dazzl"));
+function pair_type(_arg0, _arg1) {
+  if (_arg0 === 0 && _arg1 === 0) return "both zero";
+  if (_arg0 === 0) return "first zero";
+  if (_arg1 === 0) return "second zero";
+  return "neither zero";
+  throw new Error("No pattern matched for pair_type");
+}
+console.log(pair_type(0, 0));
+console.log(pair_type(0, 5));
+console.log(pair_type(5, 0));
+console.log(pair_type(3, 7));
+function to_yn(_arg0) {
+  if (_arg0 === true) return "yes";
+  if (_arg0 === false) return "no";
+  throw new Error("No pattern matched for to_yn");
+}
+console.log(to_yn(true));
+console.log(to_yn(false));

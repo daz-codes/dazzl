@@ -218,3 +218,41 @@ console.log(Integer.undigits([1, 2, 3]))# 123
 console.log(Integer.gcd(12, 8))         # 4
 console.log(Integer.pow(2, 10))         # 1024
 console.log(Integer.to_string(255, 16)) # "ff"
+
+# =============================================================================
+# Pattern-Matching Functions
+# =============================================================================
+
+# Factorial with pattern matching
+factorial 0 = 1
+factorial n = n * factorial(n - 1)
+console.log(factorial(5))   # 120
+console.log(factorial(0))   # 1
+
+# Fibonacci with pattern matching
+fib 0 = 0
+fib 1 = 1
+fib n = fib(n - 1) + fib(n - 2)
+console.log(fib(10))        # 55
+
+# String pattern matching
+greet "world" = "Hello World!"
+greet name = "Hello #{name}!"
+console.log(greet("world"))     # "Hello World!"
+console.log(greet("Dazzl"))     # "Hello Dazzl!"
+
+# Multiple parameters with wildcards
+pair_type 0, 0 = "both zero"
+pair_type 0, _ = "first zero"
+pair_type _, 0 = "second zero"
+pair_type _, _ = "neither zero"
+console.log(pair_type(0, 0))    # "both zero"
+console.log(pair_type(0, 5))    # "first zero"
+console.log(pair_type(5, 0))    # "second zero"
+console.log(pair_type(3, 7))    # "neither zero"
+
+# Boolean pattern matching
+to_yn true = "yes"
+to_yn false = "no"
+console.log(to_yn(true))        # "yes"
+console.log(to_yn(false))       # "no"

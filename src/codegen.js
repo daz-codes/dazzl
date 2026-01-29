@@ -42,6 +42,107 @@ function collectUsedModules(node, used = new Set()) {
   return used;
 }
 
+// Merge consecutive PatternFunctionClause nodes with the same name into PatternFunctionGroup
+// Also merge Haskell-style FunctionDeclarations that follow pattern clauses (catch-all clauses)
+function mergePatternFunctions(body) {
+  const result = [];
+  let i = 0;
+  while (i < body.length) {
+    const node = body[i];
+    if (node.type === "PatternFunctionClause") {
+      const name = node.name;
+      const clauses = [node];
+      i++;
+      // Collect consecutive clauses with the same name (including catch-all FunctionDeclarations)
+      while (i < body.length) {
+        const next = body[i];
+        if (next.type === "PatternFunctionClause" && next.name === name) {
+          clauses.push(next);
+          i++;
+        } else if (next.type === "FunctionDeclaration" && next.name === name) {
+          // Convert FunctionDeclaration to a catch-all PatternFunctionClause
+          const catchAllClause = {
+            type: "PatternFunctionClause",
+            name: next.name,
+            patterns: next.params.map(p => ({ type: "IdentifierPattern", name: p })),
+            body: next.body
+          };
+          clauses.push(catchAllClause);
+          i++;
+        } else {
+          break;
+        }
+      }
+      result.push({ type: "PatternFunctionGroup", name, clauses });
+    } else {
+      result.push(node);
+      i++;
+    }
+  }
+  return result;
+}
+
+// Generate condition for a pattern match
+function generatePatternCondition(pattern, argName, generate) {
+  switch (pattern.type) {
+    case "LiteralPattern": {
+      const lit = pattern.value;
+      if (lit.type === "NilLiteral") {
+        return `${argName} == ${lit.value}`;
+      }
+      return `${argName} === ${generate(lit)}`;
+    }
+    case "WildcardPattern":
+      return null; // No condition needed
+    case "IdentifierPattern":
+      return null; // No condition needed, just binding
+    default:
+      throw new Error(`Unknown pattern type: ${pattern.type}`);
+  }
+}
+
+// Generate the code for a single pattern function clause
+function generateClauseCode(clause, argNames, indent, generate) {
+  const pad = "  ".repeat(indent);
+  const innerPad = "  ".repeat(indent + 1);
+
+  // Build conditions from patterns
+  const conditions = [];
+  const bindings = [];
+
+  clause.patterns.forEach((pattern, i) => {
+    const argName = argNames[i];
+    const cond = generatePatternCondition(pattern, argName, generate);
+    if (cond) conditions.push(cond);
+    if (pattern.type === "IdentifierPattern") {
+      bindings.push({ name: pattern.name, arg: argName });
+    }
+  });
+
+  // Generate body statements with implicit return
+  const stmts = [...clause.body.body];
+  const last = stmts[stmts.length - 1];
+  if (last && last.type === "ExpressionStatement") {
+    stmts[stmts.length - 1] = { type: "ReturnStatement", value: last.expression };
+  }
+
+  // Build the clause body
+  let bodyCode = "";
+  if (bindings.length > 0) {
+    const bindingStmts = bindings.map(b => `const ${b.name} = ${b.arg};`).join(" ");
+    bodyCode = `{ ${bindingStmts} ${stmts.map(s => generate(s, 0)).join(" ")} }`;
+  } else {
+    bodyCode = stmts.map(s => generate(s, 0)).join(" ");
+  }
+
+  if (conditions.length > 0) {
+    return `${pad}if (${conditions.join(" && ")}) ${bodyCode}`;
+  } else {
+    // No conditions, just execute the body (this is a catch-all clause)
+    return `${pad}${bodyCode}`;
+  }
+}
+
 function generate(node, indent = 0) {
   const pad = "  ".repeat(indent);
 
@@ -54,7 +155,9 @@ function generate(node, indent = 0) {
         const destructure = mod.symbols.join(", ");
         imports.push(`const { ${destructure} } = require("./.dazzl_modules/${mod.file}");`);
       }
-      const body = node.body.map((s) => generate(s, indent)).join("\n");
+      // Merge consecutive pattern function clauses
+      const mergedBody = mergePatternFunctions(node.body);
+      const body = mergedBody.map((s) => generate(s, indent)).join("\n");
       return imports.length ? imports.join("\n") + "\n" + body : body;
     }
 
@@ -69,6 +172,21 @@ function generate(node, indent = 0) {
         stmts[stmts.length - 1] = { type: "ReturnStatement", value: last.expression };
       }
       const body = stmts.map((s) => generate(s, indent + 1)).join("\n");
+      return `${pad}function ${node.name}(${params}) {\n${body}\n${pad}}`;
+    }
+
+    case "PatternFunctionGroup": {
+      // Determine number of parameters from first clause
+      const arity = node.clauses[0].patterns.length;
+      const argNames = Array.from({ length: arity }, (_, i) => `_arg${i}`);
+      const params = argNames.join(", ");
+
+      let body = "";
+      for (const clause of node.clauses) {
+        body += generateClauseCode(clause, argNames, indent + 1, generate) + "\n";
+      }
+      body += `${pad}  throw new Error("No pattern matched for ${node.name}");`;
+
       return `${pad}function ${node.name}(${params}) {\n${body}\n${pad}}`;
     }
 
@@ -109,6 +227,10 @@ function generate(node, indent = 0) {
       const right = generate(node.right);
       if (node.op === "//") {
         return `Math.floor(${left} / ${right})`;
+      }
+      // Concatenation operator - works for strings and arrays
+      if (node.op === "++") {
+        return `${left}.concat(${right})`;
       }
       // JS requires parens around unary operand of **
       if (node.op === "**" && node.left.type === "UnaryExpression") {
