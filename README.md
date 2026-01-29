@@ -4,17 +4,28 @@ A programming language that compiles to JavaScript. Dazzl takes inspiration from
 
 ## Quick Start
 
+Install globally:
+
 ```bash
-npm install
-node src/cli.js examples/test.daz
-node examples/test.js
+npm install -g dazzl
 ```
 
-Or use the npm scripts:
+Then compile and run your `.daz` files:
 
 ```bash
-npm run build   # compile examples/test.daz
-npm test        # compile and run
+dazzl myfile.daz
+node myfile.js
+```
+
+### Development
+
+If you're working on the compiler itself:
+
+```bash
+git clone https://github.com/yourusername/dazzl.git
+cd dazzl
+npm install
+npm test        # compile examples/test.daz and run it
 ```
 
 ## Language Features
