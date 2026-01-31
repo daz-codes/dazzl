@@ -1,8 +1,9 @@
-// Registry of runtime modules: key -> { file, symbols }
+// Registry of runtime modules: key -> { file, symbols, deps? }
 // Keys can be AST node types (RangeLiteral) or module names (Integer)
+// deps: array of module keys that this module depends on
 const MODULES = {
   RangeLiteral: { file: "range", symbols: ["_Range", "Range"] },
-  Kernel: { file: "kernel", symbols: ["Kernel"] },
+  Kernel: { file: "kernel", symbols: ["Kernel"], deps: ["RangeLiteral"] },
   Integer: { file: "integer", symbols: ["Integer"] },
   String: { file: "str", symbols: ["Str"] },
 };
@@ -17,6 +18,7 @@ const STDLIB_ALIASES = {
 
 // Kernel functions that trigger auto-import and get transformed to Kernel.fn()
 const KERNEL_FUNCTIONS = new Set([
+  "print",
   "abs", "div", "rem", "round", "trunc", "max", "min",
   "is_sym", "is_binary", "is_boolean", "is_float", "is_integer",
   "is_list", "is_map", "is_set", "is_object", "is_number", "is_range",
@@ -101,6 +103,29 @@ function generatePatternCondition(pattern, argName, generate) {
   }
 }
 
+// Substitute identifiers in an AST node (used for guard expressions)
+// Maps pattern variable names to generated arg names (e.g., n -> _arg0)
+function substituteIdentifiers(node, substitutions) {
+  if (!node || typeof node !== 'object') return node;
+
+  if (node.type === 'Identifier' && substitutions[node.name]) {
+    return { type: 'Identifier', name: substitutions[node.name] };
+  }
+
+  // Clone the node and recursively substitute
+  const result = {};
+  for (const [key, value] of Object.entries(node)) {
+    if (Array.isArray(value)) {
+      result[key] = value.map(v => substituteIdentifiers(v, substitutions));
+    } else if (value && typeof value === 'object') {
+      result[key] = substituteIdentifiers(value, substitutions);
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+
 // Generate the code for a single pattern function clause
 function generateClauseCode(clause, argNames, indent, generate) {
   const pad = "  ".repeat(indent);
@@ -118,6 +143,19 @@ function generateClauseCode(clause, argNames, indent, generate) {
       bindings.push({ name: pattern.name, arg: argName });
     }
   });
+
+  // Add guard condition if present
+  if (clause.guard) {
+    // Build substitution map: pattern name -> arg name
+    const subs = {};
+    clause.patterns.forEach((pattern, i) => {
+      if (pattern.type === 'IdentifierPattern') {
+        subs[pattern.name] = argNames[i];
+      }
+    });
+    const substitutedGuard = substituteIdentifiers(clause.guard, subs);
+    conditions.push(generate(substitutedGuard));
+  }
 
   // Generate body statements with implicit return
   const stmts = [...clause.body.body];
@@ -263,6 +301,9 @@ function generate(node, indent = 0) {
     }
 
     case "MemberExpression":
+      if (node.computed) {
+        return `${generate(node.object)}[${generate(node.property)}]`;
+      }
       return `${generate(node.object)}.${node.property}`;
 
     case "RangeLiteral":

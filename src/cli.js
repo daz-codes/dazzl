@@ -34,8 +34,23 @@ try {
       fs.mkdirSync(modulesDir, { recursive: true });
     }
     const srcModulesDir = path.join(__dirname, "modules");
-    for (const nodeType of used) {
-      const mod = MODULES[nodeType];
+
+    // Collect all modules including dependencies
+    const toCopy = new Set();
+    const addWithDeps = (key) => {
+      if (toCopy.has(key)) return;
+      toCopy.add(key);
+      const mod = MODULES[key];
+      if (mod.deps) {
+        mod.deps.forEach(dep => addWithDeps(dep));
+      }
+    };
+    for (const key of used) {
+      addWithDeps(key);
+    }
+
+    for (const key of toCopy) {
+      const mod = MODULES[key];
       const srcFile = path.join(srcModulesDir, `${mod.file}.js`);
       const destFile = path.join(modulesDir, `${mod.file}.js`);
       fs.copyFileSync(srcFile, destFile);

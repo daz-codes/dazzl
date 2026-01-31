@@ -9,7 +9,7 @@ greeting = "Hello from Dazzl!"
 x = 10
 y = 20
 
-console.log(greeting)
+print(greeting)
 
 # Nil/null/undefined
 empty = nil
@@ -22,7 +22,7 @@ disabled = false
 
 # Symbols (like Ruby/Elixir atoms)
 status = :active
-console.log(status)
+print(status)
 
 # =============================================================================
 # Strings
@@ -33,39 +33,39 @@ name = "World"
 single_quoted = 'no interpolation here: #{name}'
 
 # String interpolation (double quotes only)
-console.log("Hello #{name}!")
-console.log("Math: 2 + 2 = #{2 + 2}")
-console.log("Chained: #{String.upcase(name)}")
+print("Hello #{name}!")
+print("Math: 2 + 2 = #{2 + 2}")
+print("Chained: #{String.upcase(name)}")
 
 # Multiline strings
 multiline = "Line 1
 Line 2
 Line 3"
-console.log(multiline)
+print(multiline)
 
 # =============================================================================
 # Numbers and Operators
 # =============================================================================
 
 # Arithmetic
-console.log(10 + 5)
-console.log(10 - 5)
-console.log(10 * 5)
-console.log(10 / 4)
+print(10 + 5)
+print(10 - 5)
+print(10 * 5)
+print(10 / 4)
 
 # Integer division and modulo
-console.log(10 // 3)       # 3 (floor division)
-console.log(17 % 5)        # 2 (modulo)
-console.log(-17 // 5)      # -4 (floors toward negative infinity)
+print(10 // 3)       # 3 (floor division)
+print(17 % 5)        # 2 (modulo)
+print(-17 // 5)      # -4 (floors toward negative infinity)
 
 # Exponentiation (right-associative)
-console.log(2 ** 10)       # 1024
-console.log(2 ** 3 ** 2)   # 512 (= 2^9)
+print(2 ** 10)       # 1024
+print(2 ** 3 ** 2)   # 512 (= 2^9)
 
 # Unary operators
-console.log(-42)
-console.log(+42)
-console.log(-(-5))         # 5
+print(-42)
+print(+42)
+print(-(-5))         # 5
 
 # =============================================================================
 # Arrays and Objects
@@ -75,7 +75,7 @@ console.log(-(-5))         # 5
 empty_arr = []
 numbers = [1, 2, 3, 4, 5]
 mixed = ["hello", 42, true, nil]
-console.log(numbers)
+print(numbers)
 
 # Objects - three styles
 obj1 = { name: "Alice", age: 30 }           # colon style
@@ -84,38 +84,32 @@ person_name = "Charlie"
 person_age = 35
 obj3 = { person_name, person_age }          # shorthand style
 obj4 = { person_name, city: "NYC", active => true }  # mixed
-console.log(obj1)
-console.log(obj4)
+print(obj1)
+print(obj4)
 
 # =============================================================================
-# Functions (four equivalent styles)
+# Functions
 # =============================================================================
 
-# Haskell-style
-add a, b = a + b
+# Arrow-style with =>
+add a, b => a + b
+squared n => n * n
+multiply a, b => a * b
+triple n => n * 3
 
-# Math-style
-squared(n) = n * n
-
-# Arrow-style
-multiply: a, b -> a * b
-
-# Arrow-style with parens
-triple: (n) -> n * 3
-
-console.log(add(x, y))      # 30
-console.log(squared(6))     # 36
-console.log(multiply(3, 4)) # 12
-console.log(triple(5))      # 15
+print(add(x, y))      # 30
+print(squared(6))     # 36
+print(multiply(3, 4)) # 12
+print(triple(5))      # 15
 
 # Block body with implicit return
-clamp: (val, min, max) -> {
+clamp val, min, max => {
   if val < min { return min }
   if val > max { return max }
   val
 }
-console.log(clamp(50, 0, 100))   # 50
-console.log(clamp(-10, 0, 100))  # 0
+print(clamp(50, 0, 100))   # 50
+print(clamp(-10, 0, 100))  # 0
 
 # =============================================================================
 # Control Flow
@@ -125,35 +119,35 @@ result = 30
 
 # If/else with optional parentheses
 if result == 30 {
-  console.log("Math works!")
+  print("Math works!")
 } else {
-  console.log("Something is wrong")
+  print("Something is wrong")
 }
 
 # Unless (negated if)
 unless result == 0 {
-  console.log("Result is not zero")
+  print("Result is not zero")
 }
 
 # Postfix conditionals
-console.log("Postfix if works!") if result == 30
-console.log("This won't print") unless result == 30
+print("Postfix if works!") if result == 30
+print("This won't print") unless result == 30
 
 # Conditional expressions (like ternary)
 level = if result > 50 "high" else "low"
 sign = if result > 0 then "positive" else "non-positive"
 grade = if result > 90 "A" else if result > 80 "B" else "C"
-console.log("Level: #{level}, Sign: #{sign}, Grade: #{grade}")
+print("Level: #{level}, Sign: #{sign}, Grade: #{grade}")
 
 # =============================================================================
 # Pipe Operator
 # =============================================================================
 
 # Pipes pass the left side as the first argument
-result |> add(5) |> console.log    # 35
+result |> add(5) |> print    # 35
 
 # Works great with String module
-"  HELLO  " |> String.trim |> String.downcase |> console.log  # "hello"
+"  HELLO  " |> String.trim |> String.downcase |> print  # "hello"
 
 # =============================================================================
 # Nil Checking
@@ -162,97 +156,136 @@ result |> add(5) |> console.log    # 35
 # nil == checks for both null AND undefined
 maybe_null = null
 maybe_undef = undefined
-console.log(maybe_null == nil)   # true
-console.log(maybe_undef == nil)  # true
-console.log(42 == nil)           # false
+print(maybe_null == nil)   # true
+print(maybe_undef == nil)  # true
+print(42 == nil)           # false
 
 # =============================================================================
 # Ranges
 # =============================================================================
 
 my_range = [1..5]
-console.log(Range.to_list(my_range))    # [1, 2, 3, 4, 5]
-console.log(Range.size(my_range))       # 5
-console.log(Range.member(my_range, 3))  # true
+print(Range.to_list(my_range))    # [1, 2, 3, 4, 5]
+print(Range.size(my_range))       # 5
+print(Range.member(my_range, 3))  # true
 
 # =============================================================================
 # Kernel Functions (auto-imported)
 # =============================================================================
 
 # Type checking
-console.log(is_integer(42))
-console.log(is_float(3.14))
-console.log(is_binary("hello"))
-console.log(is_sym(:test))
-console.log(is_list([1, 2, 3]))
-console.log(is_range(my_range))
+print(is_integer(42))
+print(is_float(3.14))
+print(is_binary("hello"))
+print(is_sym(:test))
+print(is_list([1, 2, 3]))
+print(is_range(my_range))
 
 # Utilities
-console.log(abs(-5))
-console.log(length("hello"))
-console.log(inspect(:active))
+print(abs(-5))
+print(length("hello"))
+print(inspect(:active))
 
 # =============================================================================
 # String Module (Elixir-style)
 # =============================================================================
 
-console.log(String.first("elixir"))           # "e"
-console.log(String.last("elixir"))            # "r"
-console.log(String.at("elixir", 2))           # "i"
-console.log(String.at("elixir", -1))          # "r"
-console.log(String.capitalize("hELLO"))       # "Hello"
-console.log(String.reverse("dazzl"))          # "lzzad"
-console.log(String.contains("hello", "ell"))  # true
-console.log(String.pad_leading("42", 5, "0")) # "00042"
-console.log(String.duplicate("na", 4))        # "nananana"
+print(String.first("elixir"))           # "e"
+print(String.last("elixir"))            # "r"
+print(String.at("elixir", 2))           # "i"
+print(String.at("elixir", -1))          # "r"
+print(String.capitalize("hELLO"))       # "Hello"
+print(String.reverse("dazzl"))          # "lzzad"
+print(String.contains("hello", "ell"))  # true
+print(String.pad_leading("42", 5, "0")) # "00042"
+print(String.duplicate("na", 4))        # "nananana"
 
 # =============================================================================
 # Integer Module (Elixir-style)
 # =============================================================================
 
-console.log(Integer.is_even(42))        # true
-console.log(Integer.is_odd(7))          # true
-console.log(Integer.digits(1234))       # [1, 2, 3, 4]
-console.log(Integer.digits(255, 16))    # [15, 15]
-console.log(Integer.undigits([1, 2, 3]))# 123
-console.log(Integer.gcd(12, 8))         # 4
-console.log(Integer.pow(2, 10))         # 1024
-console.log(Integer.to_string(255, 16)) # "ff"
+print(Integer.is_even(42))        # true
+print(Integer.is_odd(7))          # true
+print(Integer.digits(1234))       # [1, 2, 3, 4]
+print(Integer.digits(255, 16))    # [15, 15]
+print(Integer.undigits([1, 2, 3]))# 123
+print(Integer.gcd(12, 8))         # 4
+print(Integer.pow(2, 10))         # 1024
+print(Integer.to_string(255, 16)) # "ff"
 
 # =============================================================================
 # Pattern-Matching Functions
 # =============================================================================
 
 # Factorial with pattern matching
-factorial 0 = 1
-factorial n = n * factorial(n - 1)
-console.log(factorial(5))   # 120
-console.log(factorial(0))   # 1
+factorial 0 => 1
+factorial n => n * factorial(n - 1)
+print(factorial(5))   # 120
+print(factorial(0))   # 1
 
 # Fibonacci with pattern matching
-fib 0 = 0
-fib 1 = 1
-fib n = fib(n - 1) + fib(n - 2)
-console.log(fib(10))        # 55
+fib 0 => 0
+fib 1 => 1
+fib n => fib(n - 1) + fib(n - 2)
+print(fib(10))        # 55
 
 # String pattern matching
-greet "world" = "Hello World!"
-greet name = "Hello #{name}!"
-console.log(greet("world"))     # "Hello World!"
-console.log(greet("Dazzl"))     # "Hello Dazzl!"
+greet "world" => "Hello World!"
+greet name => "Hello #{name}!"
+print(greet("world"))     # "Hello World!"
+print(greet("Dazzl"))     # "Hello Dazzl!"
 
 # Multiple parameters with wildcards
-pair_type 0, 0 = "both zero"
-pair_type 0, _ = "first zero"
-pair_type _, 0 = "second zero"
-pair_type _, _ = "neither zero"
-console.log(pair_type(0, 0))    # "both zero"
-console.log(pair_type(0, 5))    # "first zero"
-console.log(pair_type(5, 0))    # "second zero"
-console.log(pair_type(3, 7))    # "neither zero"
+pair_type 0, 0 => "both zero"
+pair_type 0, _ => "first zero"
+pair_type _, 0 => "second zero"
+pair_type _, _ => "neither zero"
+print(pair_type(0, 0))    # "both zero"
+print(pair_type(0, 5))    # "first zero"
+print(pair_type(5, 0))    # "second zero"
+print(pair_type(3, 7))    # "neither zero"
 
 # Boolean pattern matching
-to_yn true = "yes"
-to_yn false = "no"
-console.log(to_yn(true))        # "yes"
-console.log(to_yn(false))       # "no"
+to_yn true => "yes"
+to_yn false => "no"
+print(to_yn(true))        # "yes"
+print(to_yn(false))       # "no"
+
+# Guard clauses
+fizzbuzz n if n % 15 == 0 => "FizzBuzz"
+fizzbuzz n if n % 3 == 0 => "Fizz"
+fizzbuzz n if n % 5 == 0 => "Buzz"
+fizzbuzz n => n
+print(fizzbuzz(15))       # "FizzBuzz"
+print(fizzbuzz(9))        # "Fizz"
+print(fizzbuzz(10))       # "Buzz"
+print(fizzbuzz(7))        # 7
+
+# =============================================================================
+# Index Notation
+# =============================================================================
+
+# Array indexing
+arr = [10, 20, 30, 40, 50]
+print(arr[0])             # 10
+print(arr[2])             # 30
+print(arr[4])             # 50
+
+# Dynamic index
+idx = 1
+print(arr[idx])           # 20
+print(arr[idx + 1])       # 30
+
+# Chained access
+matrix = [[1, 2], [3, 4]]
+print(matrix[0][1])       # 2
+print(matrix[1][0])       # 3
+
+# Object bracket access
+obj = { name: "test", value: 42 }
+print(obj["name"])        # "test"
+print(obj["value"])       # 42
+
+# Mixed dot and bracket notation
+data = { items: [100, 200, 300] }
+print(data.items[1])      # 200

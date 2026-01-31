@@ -94,6 +94,17 @@ Escape sequences: `\\`, `\"`, `\n`, `\t`, `\#`
 empty = []
 numbers = [1, 2, 3, 4, 5]
 mixed = ["hello", 42, true, nil]
+
+# Index access with brackets
+numbers[0]       # 1
+numbers[2]       # 3
+idx = 1
+numbers[idx]     # 2
+numbers[idx + 1] # 3
+
+# Chained access
+matrix = [[1, 2], [3, 4]]
+matrix[0][1]     # 2
 ```
 
 ### Objects
@@ -114,6 +125,11 @@ age = 30
 
 # Mixed
 { name, city: "NYC", active => true }
+
+# Bracket access
+obj = { name: "Alice", age: 30 }
+obj["name"]      # "Alice"
+obj.name         # "Alice" (dot notation also works)
 ```
 
 ### Operators
@@ -156,26 +172,19 @@ x != nil     # true if x is neither
 
 ### Functions
 
-Four equivalent styles:
+Functions use `=>` arrow syntax with at least one parameter:
 
 ```ruby
-# Haskell-style
-add x, y = x + y
-
-# Math-style
-add(x, y) = x + y
-
-# Arrow-style
-add: x, y -> x + y
-
-# Arrow-style with parens
-add: (x, y) -> x + y
+add a, b => a + b
+squared n => n * n
+identity x => x
+noop _ => nil  # use _ when no param is needed
 ```
 
 Block bodies with implicit returns:
 
 ```ruby
-clamp: (val, min, max) -> {
+clamp val, min, max => {
   if val < min { return min }
   if val > max { return max }
   val   # implicit return
@@ -199,7 +208,7 @@ add 1, 2
 puts greet "World"    # puts(greet("World"))
 
 # Chained with pipes
-"hello" |> String.upcase |> console.log
+"hello" |> String.upcase |> print
 ```
 
 ### Pattern Matching Functions
@@ -208,8 +217,8 @@ Define multiple clauses for the same function with different patterns. Dazzl mer
 
 ```ruby
 # Classic factorial with pattern matching
-factorial 0 = 1
-factorial n = n * factorial(n - 1)
+factorial 0 => 1
+factorial n => n * factorial(n - 1)
 
 factorial(5)  # 120
 ```
@@ -217,21 +226,31 @@ factorial(5)  # 120
 Patterns can be literals (numbers, strings, booleans, nil), wildcards (`_`), or identifiers:
 
 ```ruby
-# FizzBuzz with pattern matching
-fizzbuzz n if n % 15 == 0 = "FizzBuzz"
-fizzbuzz n if n % 3 == 0 = "Fizz"
-fizzbuzz n if n % 5 == 0 = "Buzz"
-fizzbuzz n = n
-
 # Handling special values
-describe nil = "nothing"
-describe true = "yes"
-describe false = "no"
-describe _ = "something else"
+describe nil => "nothing"
+describe true => "yes"
+describe false => "no"
+describe _ => "something else"
 
 describe(nil)    # "nothing"
 describe(true)   # "yes"
 describe(42)     # "something else"
+```
+
+### Guard Clauses
+
+Add conditions to pattern matching with `if`:
+
+```ruby
+fizzbuzz n if n % 15 == 0 => "FizzBuzz"
+fizzbuzz n if n % 3 == 0 => "Fizz"
+fizzbuzz n if n % 5 == 0 => "Buzz"
+fizzbuzz n => n
+
+fizzbuzz(15)  # "FizzBuzz"
+fizzbuzz(9)   # "Fizz"
+fizzbuzz(10)  # "Buzz"
+fizzbuzz(7)   # 7
 ```
 
 ### Control Flow
@@ -239,19 +258,19 @@ describe(42)     # "something else"
 ```ruby
 # If/else (parentheses optional)
 if x > 0 {
-  console.log("positive")
+  print("positive")
 } else {
-  console.log("non-positive")
+  print("non-positive")
 }
 
 # Unless (negated if)
 unless x == 0 {
-  console.log("not zero")
+  print("not zero")
 }
 
 # Postfix conditionals
-console.log("yes") if ready
-console.log("no") unless valid
+print("yes") if ready
+print("no") unless valid
 
 # Conditional expressions (like ternary)
 sign = if x > 0 then "positive" else "negative"
@@ -264,8 +283,8 @@ Passes the left side as the first argument:
 
 ```ruby
 # These are equivalent:
-console.log(add(result, 5))
-result |> add(5) |> console.log
+print(add(result, 5))
+result |> add(5) |> print
 
 # Great with String module
 "  HELLO  " |> String.trim |> String.downcase |> String.capitalize
@@ -297,6 +316,9 @@ Modules are auto-imported when used.
 Called directly (no module prefix):
 
 ```ruby
+# I/O
+print "Hello!"    # prints to console
+
 # Math
 abs(-5)           # 5
 div(10, 3)        # 3

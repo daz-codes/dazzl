@@ -27,36 +27,32 @@ VariableDeclaration
     { return { type: "VariableDeclaration", kind: "const", name: name.name, init }; }
 
 FunctionDeclaration
-  // Math-style: squared(x) = x * x
-  = name:Identifier _ "(" _ params:ParamList? _ ")" _ "=" _ body:Block _n
-    { return { type: "FunctionDeclaration", name: name.name, params: params || [], body }; }
-  / name:Identifier _ "(" _ params:ParamList? _ ")" _ "=" _ expr:Expression EOS
-    { return { type: "FunctionDeclaration", name: name.name, params: params || [], body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } }; }
-  // Arrow-style with parens: squared: (x) -> x * x
-  / name:Identifier _ ":" _ "(" _ params:ParamList? _ ")" _ "->" _ body:Block _n
-    { return { type: "FunctionDeclaration", name: name.name, params: params || [], body }; }
-  / name:Identifier _ ":" _ "(" _ params:ParamList? _ ")" _ "->" _ expr:Expression EOS
-    { return { type: "FunctionDeclaration", name: name.name, params: params || [], body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } }; }
-  // Arrow-style: squared: x -> x * x
-  / name:Identifier _ ":" _ params:ParamList _ "->" _ body:Block _n
-    { return { type: "FunctionDeclaration", name: name.name, params, body }; }
-  / name:Identifier _ ":" _ params:ParamList _ "->" _ expr:Expression EOS
-    { return { type: "FunctionDeclaration", name: name.name, params, body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } }; }
-  // Pattern-matching style: factorial 0 = 1 (must have at least one non-identifier pattern)
-  / name:Identifier patterns:PatternList _ "=" _ body:Block _n
+  // Pattern-matching with guard: fizzbuzz n if n % 15 == 0 => "FizzBuzz"
+  // Note: PatternList consumes trailing whitespace, so use _ before "if"
+  = name:Identifier patterns:PatternList "if" __ guard:GuardExpr _ "=>" _ body:Block _n
+    { return { type: "PatternFunctionClause", name: name.name, patterns, guard, body }; }
+  / name:Identifier patterns:PatternList "if" __ guard:GuardExpr _ "=>" _ expr:Expression EOS
+    { return { type: "PatternFunctionClause", name: name.name, patterns, guard,
+               body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } }; }
+  // Pattern-matching without guard: factorial 0 => 1 (must have at least one non-identifier pattern)
+  / name:Identifier patterns:PatternList _ "=>" _ body:Block _n
     &{ return patterns.some(p => p.type !== "IdentifierPattern"); } {
-      return { type: "PatternFunctionClause", name: name.name, patterns, body };
+      return { type: "PatternFunctionClause", name: name.name, patterns, guard: null, body };
     }
-  / name:Identifier patterns:PatternList _ "=" _ expr:Expression EOS
+  / name:Identifier patterns:PatternList _ "=>" _ expr:Expression EOS
     &{ return patterns.some(p => p.type !== "IdentifierPattern"); } {
-      return { type: "PatternFunctionClause", name: name.name, patterns,
+      return { type: "PatternFunctionClause", name: name.name, patterns, guard: null,
                body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } };
     }
-  // Haskell-style: squared x = x * x
-  / name:Identifier params:ParamList _ "=" _ body:Block _n
+  // Arrow-style: squared n => n * n, add a, b => a + b
+  / name:Identifier params:ParamList _ "=>" _ body:Block _n
     { return { type: "FunctionDeclaration", name: name.name, params, body }; }
-  / name:Identifier params:ParamList _ "=" _ expr:Expression EOS
+  / name:Identifier params:ParamList _ "=>" _ expr:Expression EOS
     { return { type: "FunctionDeclaration", name: name.name, params, body: { type: "Block", body: [{ type: "ExpressionStatement", expression: expr }] } }; }
+
+// Guard expression - stops before => (uses Comparison level to avoid ambiguity)
+GuardExpr
+  = Comparison
 
 ParamList
   = head:Identifier tail:(_ "," _ Identifier)* {
@@ -195,9 +191,9 @@ SpaceCall
 
 // Member expression that starts with an identifier (callable)
 CallableMember
-  = head:Identifier tail:(_ "." _ Identifier)* {
+  = head:Identifier tail:MemberTail* {
       return tail.reduce((object, t) => ({
-        type: "MemberExpression", object, property: t[3].name
+        type: "MemberExpression", object, property: t.property, computed: t.computed
       }), head);
     }
 
@@ -229,11 +225,15 @@ ArgList
     }
 
 MemberExpression
-  = head:Primary tail:(_ "." _ Identifier)* {
+  = head:Primary tail:MemberTail* {
       return tail.reduce((object, t) => ({
-        type: "MemberExpression", object, property: t[3].name
+        type: "MemberExpression", object, property: t.property, computed: t.computed
       }), head);
     }
+
+MemberTail
+  = _ "." _ id:Identifier { return { property: id.name, computed: false }; }
+  / _ "[" _ expr:Expression _ "]" { return { property: expr, computed: true }; }
 
 Primary
   = RangeLiteral

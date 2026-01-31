@@ -1,6 +1,9 @@
 const { _Range, Range } = require("./range");
 
 const Kernel = {
+  // I/O
+  print: console.log.bind(console),
+
   // Math
   abs: Math.abs,
   div: (a, b) => Math.floor(a / b),
